@@ -1,0 +1,19 @@
+# GUI Agent Requirements
+
+# Core dependencies (already in use)
+openai>=1.0.0
+langgraph>=0.0.1
+pyautogui>=0.9.54
+mss>=9.0.1
+pyperclip>=1.8.2
+
+# GUI dependencies (Tkinter version)
+Pillow>=10.0.0
+
+# Web界面依赖 (推荐)
+flask>=3.0.0
+flask-socketio>=5.3.0
+python-socketio>=5.10.0
+
+# Packaging
+pyinstaller>=6.0.0

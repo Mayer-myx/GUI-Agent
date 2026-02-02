@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUI Agent - 智能GUI自动化助手</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            color: #37352f;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #ffffff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid #e9e9e7;
+            padding: 24px 32px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #37352f;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #787774;
+            font-weight: 400;
+        }
+
+        .main-content {
+            padding: 32px;
+            max-width: 100%;
+        }
+
+        .section {
+            background: #ffffff;
+            border: 1px solid #e9e9e7;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #37352f;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .config-section {
+            background: #fdf6e3;
+            border: 1px solid #f1c40f;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #37352f;
+            font-size: 14px;
+        }
+
+        .form-group input, .form-group select, .task-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e9e9e7;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #ffffff;
+            transition: all 0.15s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus, .task-input:focus {
+            outline: none;
+            border-color: #2383e2;
+            box-shadow: 0 0 0 3px rgba(35, 131, 226, 0.1);
+        }
+
+        .task-input {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+            line-height: 1.6;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background: #2383e2;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #1a73d1;
+        }
+
+        .btn-danger {
+            background: #eb5757;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #d63447;
+        }
+
+        .btn-secondary {
+            background: #ffffff;
+            color: #37352f;
+            border: 1px solid #e9e9e7;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #f7f6f3;
+            border-color: #d3d1cb;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .panel {
+            background: #ffffff;
+            border: 1px solid #e9e9e7;
+            border-radius: 8px;
+            padding: 20px;
+            height: 500px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #37352f;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-content {
+            flex: 1;
+            background: #f7f6f3;
+            color: #37352f;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-y: auto;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            border: 1px solid #e9e9e7;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            padding: 2px 0;
+        }
+
+        .log-info { color: #37352f; }
+        .log-success { color: #0f7b0f; font-weight: 500; }
+        .log-warning { color: #b7950b; font-weight: 500; }
+        .log-error { color: #e03e3e; font-weight: 500; }
+
+        .screenshot-content {
+            flex: 1;
+            background: #f7f6f3;
+            border: 1px solid #e9e9e7;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .screenshot-main {
+            flex: 1;
+            background: #f7f6f3;
+            border: 1px solid #e9e9e7;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .screenshot-main img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        .screenshot-thumbnails {
+            height: 80px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 8px 0;
+            border-top: 1px solid #e9e9e7;
+        }
+
+        .screenshot-thumbnail {
+            min-width: 60px;
+            height: 60px;
+            border: 2px solid #e9e9e7;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            background: #f7f6f3;
+        }
+
+        .screenshot-thumbnail:hover {
+            border-color: #2383e2;
+            transform: scale(1.05);
+        }
+
+        .screenshot-thumbnail.active {
+            border-color: #2383e2;
+            box-shadow: 0 0 0 2px rgba(35, 131, 226, 0.2);
+        }
+
+        .screenshot-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .screenshot-thumbnail .step-number {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 10px;
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+
+        /* 截图模态框样式 */
+        .screenshot-modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 90vw;
+            max-height: 90vh;
+            width: auto;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 16px 70px rgba(0, 0, 0, 0.2);
+        }
+
+        .screenshot-modal-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid #e9e9e7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .screenshot-modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #37352f;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #787774;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+        }
+
+        .close-btn:hover {
+            background: #f7f6f3;
+            color: #37352f;
+        }
+
+        .screenshot-modal-body {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-height: 70vh;
+            overflow: hidden;
+        }
+
+        .screenshot-modal-body img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        .screenshot-modal-nav {
+            padding: 16px 24px 20px;
+            border-top: 1px solid #e9e9e7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #screenshotCounter {
+            font-size: 14px;
+            color: #787774;
+            font-weight: 500;
+        }
+
+        .screenshot-content img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        .screenshot-placeholder {
+            text-align: center;
+            color: #787774;
+            padding: 40px 20px;
+        }
+
+        .screenshot-placeholder p {
+            margin-bottom: 8px;
+        }
+
+        .status-bar {
+            background: #ffffff;
+            padding: 16px 32px;
+            border-top: 1px solid #e9e9e7;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            bottom: 0;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9b9a97;
+        }
+
+        .status-text {
+            font-weight: 500;
+            font-size: 14px;
+            color: #37352f;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 16px 70px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 24px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #37352f;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: flex-end;
+        }
+
+        /* 滚动条样式 */
+        .log-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .log-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .log-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .log-content::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 16px;
+            }
+            
+            .header {
+                padding: 16px 20px;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .status-bar {
+                padding: 12px 20px;
+            }
+        }
+
+        /* 标签页样式 */
+        .tab-container {
+            width: 100%;
+        }
+
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid #e9e9e7;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #787774;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: #37352f;
+            background: #f7f6f3;
+        }
+
+        .tab-btn.active {
+            color: #2383e2;
+            border-bottom-color: #2383e2;
+            background: #ffffff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 历史任务布局 */
+        .history-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            height: 600px;
+        }
+
+        .history-sidebar {
+            border: 1px solid #e9e9e7;
+            border-radius: 8px;
+            background: #f7f6f3;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .history-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e9e9e7;
+            background: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #37352f;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .history-item {
+            background: #ffffff;
+            border: 1px solid #e9e9e7;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .history-item:hover {
+            border-color: #2383e2;
+            box-shadow: 0 2px 8px rgba(35, 131, 226, 0.1);
+        }
+
+        .history-item.active {
+            border-color: #2383e2;
+            background: #f0f8ff;
+            box-shadow: 0 2px 8px rgba(35, 131, 226, 0.15);
+        }
+
+        .history-item-title {
+            font-weight: 600;
+            color: #37352f;
+            font-size: 13px;
+            margin-bottom: 6px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .history-item-meta {
+            font-size: 11px;
+            color: #787774;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item-status {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .task-status-completed { background: #d3f8d3; color: #0f7b0f; }
+        .task-status-error { background: #ffd6d6; color: #e03e3e; }
+        .task-status-stopped { background: #fff3cd; color: #b7950b; }
+
+        .history-detail {
+            border: 1px solid #e9e9e7;
+            border-radius: 8px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .detail-placeholder {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .task-detail-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .task-info-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9e9e7;
+            background: #f7f6f3;
+        }
+
+        .task-info-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #37352f;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .task-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .task-info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .task-info-label {
+            color: #787774;
+            font-size: 11px;
+            margin-bottom: 2px;
+        }
+
+        .task-info-value {
+            color: #37352f;
+            font-weight: 500;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .detail-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .screenshot-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+            overflow-y: auto;
+            padding: 12px;
+            background: #f7f6f3;
+            border: 1px solid #e9e9e7;
+            border-radius: 6px;
+        }
+
+        .screenshot-grid-item {
+            aspect-ratio: 1;
+            border: 1px solid #e9e9e7;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            background: #ffffff;
+        }
+
+        .screenshot-grid-item:hover {
+            border-color: #2383e2;
+            transform: scale(1.05);
+        }
+
+        .screenshot-grid-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .screenshot-grid-item .step-badge {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 9px;
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+
+        .detail-actions {
+            padding: 16px 20px;
+            border-top: 1px solid #e9e9e7;
+            background: #f7f6f3;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .loading-placeholder {
+            text-align: center;
+            padding: 40px 20px;
+            color: #787774;
+        }
+
+        /* 状态颜色 */
+        .status-ready { background: #9b9a97; }
+        .status-running { background: #2383e2; }
+        .status-completed { background: #0f7b0f; }
+        .status-stopped { background: #b7950b; }
+        .status-error { background: #e03e3e; }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .history-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .history-sidebar {
+                height: 300px;
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 动画效果 */
+        .section, .panel {
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #e9e9e7;
+            border-radius: 50%;
+            border-top-color: #2383e2;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <!-- 配置区域 -->
+            <div class="config-section" id="configSection" style="display: none;">
+                <div class="section-title">⚙️ 首次配置</div>
+                <p style="color: #787774; margin-bottom: 20px; font-size: 14px;">
+                    首次使用需要配置API凭证，请填写以下信息以开始使用。
+                </p>
+                <div class="form-group">
+                    <label>API Key *</label>
+                    <input type="password" id="apiKey" placeholder="请输入您的API Key">
+                </div>
+                <div class="form-group">
+                    <label>Base URL *</label>
+                    <input type="text" id="baseUrl" value="https://ark.cn-beijing.volces.com/api/v3">
+                </div>
+                <div class="form-group">
+                    <label>Model Name</label>
+                    <input type="text" id="modelName" value="ep-20260120161243-g7vwl">
+                </div>
+                <button class="btn btn-primary" onclick="saveConfig()">
+                    <span>保存配置</span>
+                </button>
+            </div>
+
+            <!-- 任务输入区域 -->
+            <div class="section">
+                <div class="section-title">📝 任务描述</div>
+                <textarea class="task-input" id="taskInput" placeholder="请输入任务描述，例如：&#10;打开浏览器搜索GUI，找到Wikipedia的介绍页面进行查看&#10;打开记事本，输入"Hello World"，然后保存到桌面"></textarea>
+
+                <div class="controls">
+                    <button class="btn btn-primary" id="startBtn" onclick="startTask()">
+                        <span>▶</span>
+                        <span>开始执行</span>
+                    </button>
+                    <button class="btn btn-danger" id="stopBtn" onclick="stopTask()" disabled>
+                        <span>⏹</span>
+                        <span>停止</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearLog()">
+                        <span>🗑</span>
+                        <span>清空日志</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showSettings()">
+                        <span>⚙</span>
+                        <span>设置</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 主要内容区域 - 使用标签页 -->
+            <div class="section">
+                <div class="tab-container">
+                    <div class="tab-header">
+                        <button class="tab-btn active" onclick="switchTab('current')" id="currentTab">
+                            <span>🚀</span>
+                            <span>当前任务</span>
+                        </button>
+                        <button class="tab-btn" onclick="switchTab('history')" id="historyTab">
+                            <span>📚</span>
+                            <span>历史任务</span>
+                        </button>
+                    </div>
+
+                    <!-- 当前任务标签页 -->
+                    <div class="tab-content active" id="currentContent">
+                        <div class="content-grid">
+                            <div class="panel">
+                                <div class="panel-title">
+                                    <span>📋</span>
+                                    <span>执行日志</span>
+                                </div>
+                                <div class="log-content" id="logContent">
+                                    <div class="log-entry log-info">等待任务开始...</div>
+                                </div>
+                            </div>
+
+                            <div class="panel">
+                                <div class="panel-title">
+                                    <span>📸</span>
+                                    <span>截图预览</span>
+                                </div>
+                                <div class="screenshot-main" id="screenshotMain">
+                                    <div class="screenshot-placeholder">
+                                        <p>暂无截图</p>
+                                        <p style="font-size: 13px; margin-top: 8px; opacity: 0.7;">
+                                            任务开始后将显示实时截图
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="screenshot-thumbnails" id="screenshotThumbnails">
+                                    <!-- 缩略图将在这里动态添加 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 历史任务标签页 -->
+                    <div class="tab-content" id="historyContent">
+                        <div class="history-layout">
+                            <!-- 左侧：任务列表 -->
+                            <div class="history-sidebar">
+                                <div class="history-header">
+                                    <h3>历史任务</h3>
+                                    <button class="btn btn-secondary btn-sm" onclick="refreshHistory()">
+                                        <span>🔄</span>
+                                        <span>刷新</span>
+                                    </button>
+                                </div>
+                                <div class="history-list" id="historyList">
+                                    <div class="loading-placeholder">
+                                        <p>加载中...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 右侧：任务详情 -->
+                            <div class="history-detail">
+                                <div class="detail-placeholder" id="detailPlaceholder">
+                                    <div style="text-align: center; padding: 60px 20px; color: #787774;">
+                                        <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+                                        <h3 style="margin-bottom: 8px; color: #37352f;">选择任务查看详情</h3>
+                                        <p>点击左侧任务列表中的任务来查看详细的执行日志和截图</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="task-detail-content" id="taskDetailContent" style="display: none;">
+                                    <!-- 任务信息 -->
+                                    <div class="task-info-header" id="taskInfoHeader">
+                                        <!-- 任务基本信息将在这里显示 -->
+                                    </div>
+                                    
+                                    <!-- 日志和截图 -->
+                                    <div class="detail-grid">
+                                        <div class="detail-panel">
+                                            <div class="panel-title">
+                                                <span>📋</span>
+                                                <span>执行日志</span>
+                                            </div>
+                                            <div class="log-content" id="historyLogContent">
+                                                <!-- 历史日志将在这里显示 -->
+                                            </div>
+                                        </div>
+
+                                        <div class="detail-panel">
+                                            <div class="panel-title">
+                                                <span>📸</span>
+                                                <span>截图记录</span>
+                                            </div>
+                                            <div class="screenshot-grid" id="historyScreenshotGrid">
+                                                <!-- 历史截图将在这里显示 -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 操作按钮 -->
+                                    <div class="detail-actions">
+                                        <button class="btn btn-primary" onclick="replayCurrentTask()">
+                                            <span>🔄</span>
+                                            <span>重新执行</span>
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="clearTaskDetail()">
+                                            <span>✕</span>
+                                            <span>关闭详情</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span style="color: #787774; font-size: 14px;">状态</span>
+            <div class="status-indicator status-ready" id="statusIndicator"></div>
+            <span class="status-text" id="statusText">就绪</span>
+        </div>
+    </div>
+
+    <!-- 设置模态框 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h2>⚙️ 应用设置</h2>
+            <p style="color: #787774; margin-bottom: 24px; font-size: 14px;">
+                修改API配置和模型参数
+            </p>
+            <div class="form-group">
+                <label>API Key *</label>
+                <input type="password" id="settingsApiKey" placeholder="留空则保持当前设置">
+            </div>
+            <div class="form-group">
+                <label>Base URL *</label>
+                <input type="text" id="settingsBaseUrl">
+            </div>
+            <div class="form-group">
+                <label>Model Name</label>
+                <input type="text" id="settingsModelName">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeSettings()">取消</button>
+                <button class="btn btn-primary" onclick="updateSettings()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 截图预览模态框 -->
+    <div class="modal" id="screenshotModal">
+        <div class="screenshot-modal-content">
+            <div class="screenshot-modal-header">
+                <h3 id="screenshotModalTitle">步骤截图</h3>
+                <button class="close-btn" onclick="closeScreenshotModal()">×</button>
+            </div>
+            <div class="screenshot-modal-body">
+                <img id="screenshotModalImage" src="" alt="截图预览">
+            </div>
+            <div class="screenshot-modal-nav">
+                <button class="btn btn-secondary" id="prevScreenshotBtn" onclick="prevScreenshot()">
+                    ← 上一张
+                </button>
+                <span id="screenshotCounter">1 / 1</span>
+                <button class="btn btn-secondary" id="nextScreenshotBtn" onclick="nextScreenshot()">
+                    下一张 →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentConfig = null;
+        let screenshots = []; // 存储所有截图信息
+        let currentScreenshotIndex = 0;
+        let currentTaskData = null; // 当前查看的任务数据
+        let allHistoryTasks = []; // 所有历史任务数据
+
+        // 页面加载时检查配置
+        window.onload = async function() {
+            await loadConfig();
+            await loadHistoryTasks();
+        };
+
+        // 标签页切换
+        function switchTab(tabName) {
+            // 更新标签按钮状态
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            document.getElementById(tabName + 'Content').classList.add('active');
+            
+            // 如果切换到历史标签页，刷新历史任务
+            if (tabName === 'history') {
+                loadHistoryTasks();
+            }
+        }
+
+        // 页面加载时检查配置
+        window.onload = async function() {
+            await loadConfig();
+            await loadHistoryTasks();
+        };
+
+        // 加载配置
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const data = await response.json();
+                
+                if (data.first_run) {
+                    document.getElementById('configSection').style.display = 'block';
+                } else {
+                    currentConfig = data.config;
+                }
+            } catch (error) {
+                addLog('加载配置失败: ' + error.message, 'error');
+            }
+        }
+
+        // 保存配置
+        async function saveConfig() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const modelName = document.getElementById('modelName').value.trim();
+
+            if (!apiKey || !baseUrl) {
+                alert('API Key和Base URL不能为空');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({api_key: apiKey, base_url: baseUrl, model_name: modelName})
+                });
+
+                if (response.ok) {
+                    document.getElementById('configSection').style.display = 'none';
+                    addLog('配置保存成功', 'success');
+                    await loadConfig();
+                } else {
+                    const error = await response.json();
+                    alert('保存失败: ' + error.error);
+                }
+            } catch (error) {
+                alert('保存失败: ' + error.message);
+            }
+        }
+
+        // 加载历史任务
+        async function loadHistoryTasks() {
+            try {
+                const response = await fetch('/api/tasks');
+                const data = await response.json();
+                
+                allHistoryTasks = data.tasks || [];
+                renderHistoryList();
+            } catch (error) {
+                console.error('加载历史任务失败:', error);
+                document.getElementById('historyList').innerHTML = `
+                    <div class="loading-placeholder">
+                        <p style="color: #e03e3e;">加载失败</p>
+                        <p style="font-size: 12px;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染历史任务列表
+        function renderHistoryList() {
+            const historyList = document.getElementById('historyList');
+            
+            if (allHistoryTasks.length === 0) {
+                historyList.innerHTML = `
+                    <div class="loading-placeholder">
+                        <p>暂无历史任务</p>
+                        <p style="font-size: 12px;">执行任务后将在这里显示</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            historyList.innerHTML = '';
+            allHistoryTasks.forEach((task, index) => {
+                const historyItem = createHistoryItem(task, index);
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        // 创建历史任务项
+        function createHistoryItem(task, index) {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.dataset.taskId = task.id;
+            
+            const statusClass = `task-status-${task.status === '已完成' ? 'completed' : 
+                                task.status === '错误' ? 'error' : 'stopped'}`;
+            
+            const startTime = new Date(task.start_time);
+            const duration = task.duration ? `${task.duration.toFixed(1)}s` : '未知';
+            
+            item.innerHTML = `
+                <div class="history-item-title">${task.instruction}</div>
+                <div class="history-item-meta">
+                    <span>${startTime.toLocaleDateString()} ${startTime.toLocaleTimeString()}</span>
+                    <div class="history-item-status ${statusClass}">${task.status}</div>
+                </div>
+                <div class="history-item-meta" style="margin-top: 4px;">
+                    <span>⏱️ ${duration}</span>
+                    <span>📸 ${task.steps} 步</span>
+                </div>
+            `;
+            
+            item.onclick = () => showTaskDetail(task.id);
+            return item;
+        }
+
+        // 显示任务详情
+        async function showTaskDetail(taskId) {
+            try {
+                // 更新选中状态
+                document.querySelectorAll('.history-item').forEach(item => {
+                    item.classList.toggle('active', item.dataset.taskId === taskId);
+                });
+                
+                const response = await fetch(`/api/task/${taskId}`);
+                const taskData = await response.json();
+                
+                if (taskData.error) {
+                    alert('加载任务详情失败: ' + taskData.error);
+                    return;
+                }
+                
+                currentTaskData = taskData;
+                renderTaskDetail(taskData);
+                
+            } catch (error) {
+                alert('加载任务详情失败: ' + error.message);
+            }
+        }
+
+        // 渲染任务详情
+        function renderTaskDetail(taskData) {
+            // 显示详情内容，隐藏占位符
+            document.getElementById('detailPlaceholder').style.display = 'none';
+            document.getElementById('taskDetailContent').style.display = 'flex';
+            
+            // 渲染任务信息头部
+            const taskInfoHeader = document.getElementById('taskInfoHeader');
+            const startTime = new Date(taskData.start_time);
+            const endTime = new Date(taskData.end_time);
+            const duration = taskData.duration ? `${taskData.duration.toFixed(1)}秒` : '未知';
+            
+            const statusClass = `task-status-${taskData.status === '已完成' ? 'completed' : 
+                                taskData.status === '错误' ? 'error' : 'stopped'}`;
+            
+            taskInfoHeader.innerHTML = `
+                <div class="task-info-title">${taskData.instruction}</div>
+                <div class="task-info-grid">
+                    <div class="task-info-item">
+                        <div class="task-info-label">开始时间</div>
+                        <div class="task-info-value">${startTime.toLocaleString()}</div>
+                    </div>
+                    <div class="task-info-item">
+                        <div class="task-info-label">结束时间</div>
+                        <div class="task-info-value">${endTime.toLocaleString()}</div>
+                    </div>
+                    <div class="task-info-item">
+                        <div class="task-info-label">执行时长</div>
+                        <div class="task-info-value">${duration}</div>
+                    </div>
+                    <div class="task-info-item">
+                        <div class="task-info-label">状态</div>
+                        <div class="task-info-value">
+                            <span class="history-item-status ${statusClass}">${taskData.status}</span>
+                        </div>
+                    </div>
+                    <div class="task-info-item">
+                        <div class="task-info-label">步骤数</div>
+                        <div class="task-info-value">${taskData.steps}</div>
+                    </div>
+                    <div class="task-info-item">
+                        <div class="task-info-label">截图数</div>
+                        <div class="task-info-value">${taskData.screenshots.length}</div>
+                    </div>
+                </div>
+            `;
+            
+            // 渲染执行日志
+            const historyLogContent = document.getElementById('historyLogContent');
+            historyLogContent.innerHTML = '';
+            taskData.logs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry log-${log.level}`;
+                logEntry.textContent = log.message;
+                historyLogContent.appendChild(logEntry);
+            });
+            
+            // 渲染截图网格
+            const historyScreenshotGrid = document.getElementById('historyScreenshotGrid');
+            historyScreenshotGrid.innerHTML = '';
+            taskData.screenshots.forEach((screenshot, index) => {
+                const screenshotItem = document.createElement('div');
+                screenshotItem.className = 'screenshot-grid-item';
+                
+                const img = document.createElement('img');
+                img.src = `/screenshots/${screenshot.filename}`;
+                img.alt = `Step ${screenshot.step}`;
+                
+                const stepBadge = document.createElement('div');
+                stepBadge.className = 'step-badge';
+                stepBadge.textContent = screenshot.step;
+                
+                screenshotItem.appendChild(img);
+                screenshotItem.appendChild(stepBadge);
+                
+                screenshotItem.onclick = () => {
+                    openScreenshotModal(index, taskData.screenshots);
+                };
+                
+                historyScreenshotGrid.appendChild(screenshotItem);
+            });
+        }
+
+        // 清空任务详情
+        function clearTaskDetail() {
+            document.getElementById('detailPlaceholder').style.display = 'flex';
+            document.getElementById('taskDetailContent').style.display = 'none';
+            
+            // 清除选中状态
+            document.querySelectorAll('.history-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            currentTaskData = null;
+        }
+
+        // 重新执行当前任务
+        function replayCurrentTask() {
+            if (currentTaskData) {
+                document.getElementById('taskInput').value = currentTaskData.instruction;
+                switchTab('current');
+            }
+        }
+
+        // 刷新历史任务
+        function refreshHistory() {
+            loadHistoryTasks();
+        }
+
+        // 开始任务
+        async function startTask() {
+            const instruction = document.getElementById('taskInput').value.trim();
+            if (!instruction) {
+                alert('请输入任务描述');
+                return;
+            }
+
+            // 清空截图数组和显示
+            screenshots = [];
+            currentScreenshotIndex = 0;
+            clearScreenshots();
+
+            try {
+                const response = await fetch('/api/task/start', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({instruction})
+                });
+
+                if (response.ok) {
+                    document.getElementById('startBtn').disabled = true;
+                    document.getElementById('stopBtn').disabled = false;
+                    // 刷新历史任务列表
+                    loadHistoryTasks();
+                } else {
+                    const error = await response.json();
+                    alert('启动失败: ' + error.error);
+                }
+            } catch (error) {
+                alert('启动失败: ' + error.message);
+            }
+        }
+
+        // 停止任务
+        async function stopTask() {
+            try {
+                await fetch('/api/task/stop', {method: 'POST'});
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+            } catch (error) {
+                alert('停止失败: ' + error.message);
+            }
+        }
+
+        // 清空截图显示
+        function clearScreenshots() {
+            const screenshotMain = document.getElementById('screenshotMain');
+            const screenshotThumbnails = document.getElementById('screenshotThumbnails');
+            
+            screenshotMain.innerHTML = `
+                <div class="screenshot-placeholder">
+                    <p>暂无截图</p>
+                    <p style="font-size: 13px; margin-top: 8px; opacity: 0.7;">
+                        任务开始后将显示实时截图
+                    </p>
+                </div>
+            `;
+            screenshotThumbnails.innerHTML = '';
+        }
+
+        // 添加截图
+        function addScreenshot(screenshotData) {
+            screenshots.push(screenshotData);
+            currentScreenshotIndex = screenshots.length - 1;
+            
+            // 更新主显示区域
+            updateMainScreenshot(screenshotData);
+            
+            // 添加缩略图
+            addThumbnail(screenshotData, screenshots.length - 1);
+        }
+
+        // 更新主截图显示
+        function updateMainScreenshot(screenshotData) {
+            const screenshotMain = document.getElementById('screenshotMain');
+            const img = document.createElement('img');
+            img.src = `/screenshots/${screenshotData.filename}?t=${Date.now()}`;
+            img.alt = `Step ${screenshotData.step}`;
+            img.onclick = () => openScreenshotModal(currentScreenshotIndex);
+            
+            img.onerror = function() {
+                console.error('截图加载失败:', screenshotData.filename);
+                screenshotMain.innerHTML = `
+                    <div class="screenshot-placeholder">
+                        <p style="color: #e03e3e;">截图加载失败</p>
+                        <p style="font-size: 13px;">步骤 ${screenshotData.step}</p>
+                    </div>
+                `;
+            };
+            
+            img.onload = function() {
+                console.log('截图加载成功:', screenshotData.filename);
+            };
+            
+            screenshotMain.innerHTML = '';
+            screenshotMain.appendChild(img);
+            
+            // 添加步骤信息
+            const stepInfo = document.createElement('div');
+            stepInfo.style.position = 'absolute';
+            stepInfo.style.bottom = '8px';
+            stepInfo.style.right = '8px';
+            stepInfo.style.background = 'rgba(0, 0, 0, 0.7)';
+            stepInfo.style.color = 'white';
+            stepInfo.style.padding = '4px 8px';
+            stepInfo.style.borderRadius = '4px';
+            stepInfo.style.fontSize = '12px';
+            stepInfo.style.fontWeight = '500';
+            stepInfo.textContent = `步骤 ${screenshotData.step}`;
+            screenshotMain.appendChild(stepInfo);
+        }
+
+        // 添加缩略图
+        function addThumbnail(screenshotData, index) {
+            const screenshotThumbnails = document.getElementById('screenshotThumbnails');
+            
+            const thumbnail = document.createElement('div');
+            thumbnail.className = 'screenshot-thumbnail';
+            if (index === currentScreenshotIndex) {
+                thumbnail.classList.add('active');
+            }
+            
+            const img = document.createElement('img');
+            img.src = `/screenshots/${screenshotData.filename}?t=${Date.now()}`;
+            img.alt = `Step ${screenshotData.step}`;
+            
+            const stepNumber = document.createElement('div');
+            stepNumber.className = 'step-number';
+            stepNumber.textContent = screenshotData.step;
+            
+            thumbnail.appendChild(img);
+            thumbnail.appendChild(stepNumber);
+            
+            thumbnail.onclick = () => {
+                selectScreenshot(index);
+            };
+            
+            screenshotThumbnails.appendChild(thumbnail);
+            
+            // 滚动到最新的缩略图
+            thumbnail.scrollIntoView({ behavior: 'smooth', inline: 'end' });
+        }
+
+        // 选择截图
+        function selectScreenshot(index) {
+            if (index < 0 || index >= screenshots.length) return;
+            
+            currentScreenshotIndex = index;
+            updateMainScreenshot(screenshots[index]);
+            
+            // 更新缩略图激活状态
+            const thumbnails = document.querySelectorAll('.screenshot-thumbnail');
+            thumbnails.forEach((thumb, i) => {
+                thumb.classList.toggle('active', i === index);
+            });
+        }
+
+        // 打开截图放大预览
+        function openScreenshotModal(index = null, screenshotArray = null) {
+            const targetScreenshots = screenshotArray || screenshots;
+            if (targetScreenshots.length === 0) return;
+            
+            if (index !== null) {
+                currentScreenshotIndex = index;
+            }
+            
+            const modal = document.getElementById('screenshotModal');
+            const modalImage = document.getElementById('screenshotModalImage');
+            const modalTitle = document.getElementById('screenshotModalTitle');
+            const counter = document.getElementById('screenshotCounter');
+            
+            const screenshot = targetScreenshots[currentScreenshotIndex];
+            modalImage.src = `/screenshots/${screenshot.filename}?t=${Date.now()}`;
+            modalTitle.textContent = `步骤 ${screenshot.step} 截图${screenshotArray ? ' (历史记录)' : ''}`;
+            counter.textContent = `${currentScreenshotIndex + 1} / ${targetScreenshots.length}`;
+            
+            // 更新导航按钮状态
+            document.getElementById('prevScreenshotBtn').disabled = currentScreenshotIndex === 0;
+            document.getElementById('nextScreenshotBtn').disabled = currentScreenshotIndex === targetScreenshots.length - 1;
+            
+            // 如果是历史截图，临时替换导航函数
+            if (screenshotArray) {
+                window.tempPrevScreenshot = window.prevScreenshot;
+                window.tempNextScreenshot = window.nextScreenshot;
+                
+                window.prevScreenshot = () => {
+                    if (currentScreenshotIndex > 0) {
+                        currentScreenshotIndex--;
+                        openScreenshotModal(currentScreenshotIndex, screenshotArray);
+                    }
+                };
+                
+                window.nextScreenshot = () => {
+                    if (currentScreenshotIndex < screenshotArray.length - 1) {
+                        currentScreenshotIndex++;
+                        openScreenshotModal(currentScreenshotIndex, screenshotArray);
+                    }
+                };
+            }
+            
+            modal.classList.add('active');
+        }
+
+        // 关闭截图预览
+        function closeScreenshotModal() {
+            document.getElementById('screenshotModal').classList.remove('active');
+            
+            // 恢复原始导航函数
+            if (window.tempPrevScreenshot) {
+                window.prevScreenshot = window.tempPrevScreenshot;
+                window.nextScreenshot = window.tempNextScreenshot;
+                delete window.tempPrevScreenshot;
+                delete window.tempNextScreenshot;
+            }
+        }
+
+        // 上一张截图
+        function prevScreenshot() {
+            if (currentScreenshotIndex > 0) {
+                currentScreenshotIndex--;
+                openScreenshotModal();
+            }
+        }
+
+        // 下一张截图
+        function nextScreenshot() {
+            if (currentScreenshotIndex < screenshots.length - 1) {
+                currentScreenshotIndex++;
+                openScreenshotModal();
+            }
+        }
+
+        // 显示设置
+        function showSettings() {
+            if (currentConfig) {
+                document.getElementById('settingsApiKey').value = '';
+                document.getElementById('settingsBaseUrl').value = currentConfig.base_url;
+                document.getElementById('settingsModelName').value = currentConfig.model_name;
+            }
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        // 关闭设置
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        // 更新设置
+        async function updateSettings() {
+            const apiKey = document.getElementById('settingsApiKey').value.trim();
+            const baseUrl = document.getElementById('settingsBaseUrl').value.trim();
+            const modelName = document.getElementById('settingsModelName').value.trim();
+
+            if (!baseUrl) {
+                alert('Base URL不能为空');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        api_key: apiKey || currentConfig.api_key,
+                        base_url: baseUrl,
+                        model_name: modelName,
+                        history: currentConfig.history
+                    })
+                });
+
+                if (response.ok) {
+                    closeSettings();
+                    addLog('配置已更新', 'success');
+                    await loadConfig();
+                } else {
+                    const error = await response.json();
+                    alert('更新失败: ' + error.error);
+                }
+            } catch (error) {
+                alert('更新失败: ' + error.message);
+            }
+        }
+
+        // 添加日志
+        function addLog(message, level = 'info') {
+            const logContent = document.getElementById('logContent');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${level}`;
+            entry.textContent = message;
+            logContent.appendChild(entry);
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+
+        // 更新状态
+        function updateStatus(status, color) {
+            const statusText = document.getElementById('statusText');
+            const statusIndicator = document.getElementById('statusIndicator');
+            
+            statusText.textContent = status;
+            
+            // 移除所有状态类
+            statusIndicator.className = 'status-indicator';
+            
+            // 根据状态添加对应的类
+            switch(status) {
+                case '就绪':
+                    statusIndicator.classList.add('status-ready');
+                    break;
+                case '执行中':
+                    statusIndicator.classList.add('status-running');
+                    break;
+                case '已完成':
+                    statusIndicator.classList.add('status-completed');
+                    break;
+                case '已停止':
+                    statusIndicator.classList.add('status-stopped');
+                    break;
+                case '错误':
+                    statusIndicator.classList.add('status-error');
+                    break;
+                default:
+                    statusIndicator.classList.add('status-ready');
+            }
+            
+            if (status === '已完成' || status === '已停止' || status === '错误') {
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+            }
+        }
+
+        // 清空日志
+        function clearLog() {
+            document.getElementById('logContent').innerHTML = '';
+        }
+
+        // Socket.IO事件监听
+        socket.on('log', function(data) {
+            addLog(data.message, data.level);
+        });
+
+        socket.on('status', function(data) {
+            updateStatus(data.status, data.color);
+        });
+
+        socket.on('screenshot', function(data) {
+            console.log('收到截图事件:', data);
+            addScreenshot(data);
+        });
+
+        // 键盘导航支持
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('screenshotModal');
+            if (modal.classList.contains('active')) {
+                if (e.key === 'Escape') {
+                    closeScreenshotModal();
+                } else if (e.key === 'ArrowLeft') {
+                    prevScreenshot();
+                } else if (e.key === 'ArrowRight') {
+                    nextScreenshot();
+                }
+            }
+        });
+
+        // 点击模态框背景关闭
+        document.addEventListener('click', function(e) {
+            // 关闭设置模态框
+            if (e.target.id === 'settingsModal') {
+                closeSettings();
+            }
+            // 关闭截图预览模态框
+            if (e.target.id === 'screenshotModal') {
+                closeScreenshotModal();
+            }
+        });
+    </script>
+</body>
+</html>
