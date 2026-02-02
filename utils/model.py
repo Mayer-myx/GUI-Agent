@@ -5,15 +5,17 @@ import base64
 from openai import OpenAI
 from typing import List, Dict, Any
 
-# Ark uses a fixed base URL; the key is expected in ARK_API_KEY
-API_KEY = "33ed737a-e74b-4311-9779-1792abbe16f2"
-BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
+# 默认配置 - 实际使用时会从config.json加载
+DEFAULT_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
+DEFAULT_MODEL = "your-model-name"
 
 class LVMChat:
     """支持会话记忆的多模态聊天类"""
     
-    def __init__(self, api_key: str = API_KEY, base_url: str = BASE_URL, 
-                 model: str = "ep-20260120161243-g7vwl"):
+    def __init__(self, api_key: str = None, base_url: str = DEFAULT_BASE_URL, 
+                 model: str = DEFAULT_MODEL):
+        if not api_key:
+            raise ValueError("API Key is required. Please configure it in config.json")
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.model = model
         # 🔥 核心改动：添加会话历史记录

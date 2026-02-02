@@ -33,7 +33,7 @@ class AgentState(TypedDict):
 class GUIAgent:
     """GUI自动化Agent"""
     
-    def __init__(self, instruction: str, model_name: str = "ep-20260120161243-g7vwl"):
+    def __init__(self, instruction: str, model_name: str = "your-model-name"):
         self.instruction = instruction
         self.operation = Operation()
         self.lvm_chat = LVMChat(model=model_name)

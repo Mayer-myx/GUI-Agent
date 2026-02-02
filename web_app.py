@@ -74,7 +74,7 @@ def save_config():
     config = AppConfig(
         api_key=data.get('api_key', ''),
         base_url=data.get('base_url', ''),
-        model_name=data.get('model_name', 'ep-20260120161243-g7vwl'),
+        model_name=data.get('model_name', 'your-model-name'),
         history=data.get('history', [])
     )
     

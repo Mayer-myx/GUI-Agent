@@ -93,7 +93,7 @@ class ConfigWizard:
             row=4, column=0, sticky=tk.W, pady=(0, 5)
         )
         self.model_name_entry = ttk.Entry(input_frame, width=50)
-        self.model_name_entry.insert(0, "ep-20260120161243-g7vwl")
+        self.model_name_entry.insert(0, "your-model-name")
         self.model_name_entry.grid(row=5, column=0, pady=(0, 15))
         
         # 帮助文本
@@ -166,7 +166,7 @@ class ConfigWizard:
         config = AppConfig(
             api_key=api_key,
             base_url=base_url,
-            model_name=model_name if model_name else "ep-20260120161243-g7vwl"
+            model_name=model_name if model_name else "your-model-name"
         )
         
         # 验证配置

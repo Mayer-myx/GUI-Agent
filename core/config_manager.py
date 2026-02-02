@@ -11,7 +11,7 @@ class AppConfig:
     """应用程序配置数据类"""
     api_key: str
     base_url: str
-    model_name: str = "ep-20260120161243-g7vwl"
+    model_name: str = "your-model-name"
     history: List[str] = field(default_factory=list)
     
     def to_dict(self) -> dict:

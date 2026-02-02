@@ -153,7 +153,7 @@ class SettingsDialog:
         config = AppConfig(
             api_key=api_key,
             base_url=base_url,
-            model_name=model_name if model_name else "ep-20260120161243-g7vwl",
+            model_name=model_name if model_name else "your-model-name",
             history=self.current_config.history.copy()
         )
         

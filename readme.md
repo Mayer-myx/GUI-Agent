@@ -81,34 +81,50 @@ dist\GUI-Agent.exe
 
 ## 🚀 快速开始（推荐Web版本）
 
-### 第一步：安装依赖
+### 第一步：克隆项目
 
 ```bash
-pip install flask flask-socketio python-socketio
+git clone https://github.com/your-username/GUI-Agent.git
+cd GUI-Agent
 ```
 
-### 第二步：运行应用
+### 第二步：安装依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+### 第三步：配置API
+
+1. 复制配置模板：
+   ```bash
+   cp config.example.json config.json
+   ```
+
+2. 编辑 `config.json` 文件，填写你的API信息：
+   ```json
+   {
+     "api_key": "your-api-key-here",
+     "base_url": "https://ark.cn-beijing.volces.com/api/v3", 
+     "model_name": "your-model-name-here",
+     "history": []
+   }
+   ```
+
+### 第四步：运行应用
 
 ```bash
 python web_app.py
 ```
 
-### 第三步：配置API
+### 第五步：开始使用
 
 1. 浏览器会自动打开 `http://127.0.0.1:5000`
-2. 首次运行会显示配置界面
-3. 填写：
-   - **API Key**: 你的火山引擎API密钥
-   - **Base URL**: `https://ark.cn-beijing.volces.com/api/v3`
-   - **Model Name**: `ep-20260120161243-g7vwl` (默认)
-4. 点击"保存配置"
-
-### 第四步：执行任务
-
-1. 在任务输入框输入自然语言描述
-2. 点击"▶ 开始执行"
-3. 查看实时日志和截图
-4. 等待任务完成
+2. 如果是首次运行，会显示配置界面让你输入API信息
+3. 在任务输入框输入自然语言描述
+4. 点击"▶ 开始执行"
+5. 查看实时日志和截图
+6. 等待任务完成
 
 ---
 
@@ -184,21 +200,52 @@ dist\GUI-Agent.exe  # 约40-50MB
 
 ---
 
-## 🔧 配置文件
+## 🔧 配置说明
 
-配置保存在 `config.json`:
+### API配置
 
-```json
-{
-  "api_key": "your-api-key-here",
-  "base_url": "https://ark.cn-beijing.volces.com/api/v3",
-  "model_name": "ep-20260120161243-g7vwl",
-  "history": [
-    "打开浏览器搜索GUI...",
-    "打开记事本..."
-  ]
-}
+项目需要配置AI模型API才能正常工作。
+
+1. **复制配置模板**：
+   ```bash
+   cp config.example.json config.json
+   ```
+
+2. **获取API凭证**：
+   - 访问 [火山引擎控制台](https://console.volcengine.com/)
+   - 进入"模型推理"服务
+   - 创建推理接入点获取API Key和模型名称
+
+3. **编辑配置文件**：
+   ```json
+   {
+     "api_key": "your-api-key-here",
+     "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+     "model_name": "your-model-name-here", 
+     "history": []
+   }
+   ```
+
+### 目录结构
+
 ```
+GUI-Agent/
+├── config.example.json    # 配置文件模板
+├── config.json           # 实际配置文件（不会上传到Git）
+├── steps/               # 截图文件目录（不会上传到Git）
+├── tasks/               # 任务记录目录（不会上传到Git）
+├── web_app.py           # Web版本主程序
+├── gui_app.py           # Tkinter版本主程序
+├── main.py              # 核心Agent逻辑
+└── requirements.txt     # Python依赖
+```
+
+### 数据隐私
+
+- `config.json` - 包含API密钥，已加入.gitignore
+- `steps/` - 包含截图文件，已加入.gitignore  
+- `tasks/` - 包含任务记录，已加入.gitignore
+- 这些敏感数据不会被上传到GitHub
 
 ---
 
